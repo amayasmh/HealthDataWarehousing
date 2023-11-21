@@ -2,7 +2,12 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.python import PythonOperator
+from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.bash import BashOperator
+import pandas as pd 
+import os
+from pathlib import Path
+
 # [START default_args]
 default_args = {
     'owner': 'airflow',
@@ -14,26 +19,29 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 # [END default_args]
+sql_f_createT_path = Path(os.environ['AIRFLOW_HOME'] + '/dags/sql/create_tables.sql')
 
-@task(task_id="extract_data")
-def extract_data():
+
+@task(task_id="extract_and_transformation_data")
+def extract_transform_data():
     # Extract data from various sources
     print("Data extracted successfully") # Return a serializable result
+    df_urgence = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/raw/donnees-urgences-SOS-medecins.csv"),
+                        sep=";",
+                        dtype="unicode")
+    df_urgence = df_urgence.drop(["nbre_acte_tot_f","nbre_acte_tot_h","nbre_acte_corona_f","nbre_acte_corona_h","nbre_acte_tot","nbre_acte_corona"], axis=1)
+    print(df_urgence)
 
-extract = extract_data()
+    df_tranche = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/raw/code-tranches-dage-donnees-urgences.csv"),
+                        sep=";",
+                        dtype="unicode")
+    print(df_tranche)
+    
+    df_dep = pd.read_json(os.path.expandvars("${AIRFLOW_HOME}/data/raw/departements-region.json"))
+    print(df_dep)
 
-@task(task_id="transform_data")
-def transform_data():
-    # Transform data
-    print("Transforming data")
+extract = extract_transform_data()
 
-transform = transform_data()
-
-@task(task_id="create_tables")
-def create_tables():
-    print("Creating tables in the database")
-
-create = create_tables()
 
 @task(task_id="load_data")
 def load_data():
@@ -58,5 +66,12 @@ with DAG(
     
     )
 
+    create_tables = PostgresOperator(
+        task_id='create_tables',
+        sql=sql_f_createT_path.read_text(),
+        postgres_conn_id='postgres_connexion', 
+        autocommit=True,
+    )
+
 # Define the task dependencies
-start >> extract >> transform >> create >> insert
+start >> create_tables >> extract >> insert
