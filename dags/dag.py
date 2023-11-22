@@ -3,11 +3,11 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.python import PythonOperator
 from airflow.operators.postgres_operator import PostgresOperator
-from airflow.operators.bash import BashOperator
+from sqlalchemy import create_engine
 import pandas as pd 
 import os
 from pathlib import Path
-from sqlalchemy import create_engine
+
 
 
 # [START default_args]
@@ -22,9 +22,9 @@ default_args = {
 }
 # [END default_args]
 
-# Les chemins vers les fichiers sql
+# Les chemins vers les fichiers sql pour creer les tables 
 sql_f_createT_path = Path(os.environ['AIRFLOW_HOME'] + '/dags/sql/create_tables.sql')
-# sql_insere_file_path = Path(os.environ['AIRFLOW_HOME'] + '/dags/sql/insert_values.sql')
+
 
 
 @task(task_id="extract_and_transformation_data")
@@ -34,16 +34,33 @@ def extract_transform_data():
 
     df_urgence = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/raw/donnees-urgences-SOS-medecins.csv"),
                         sep=";",
-                        dtype="unicode")
-    df_urgence = df_urgence.drop(["nbre_acte_tot_f","nbre_acte_tot_h","nbre_acte_corona_f","nbre_acte_corona_h","nbre_acte_tot","nbre_acte_corona"], axis=1)
-    df_urgence["date_de_passage"] = pd.to_datetime(df_urgence["date_de_passage"],errors = "coerce",format='mixed')
-    df_urgence['date_de_passage'] = df_urgence['date_de_passage'].dt.strftime('%Y-%m-%d')
-    df_urgence.columns.values[2] = 'code_age'
-    df_urgence.to_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/donnees-urgences-SOS-medecins.csv"), index=False)
+                        dtype="unicode",
+                        )
+
+    # Ajout d'une colonne id
+    df_urgence['id'] = range(len(df_urgence))
     print(df_urgence)
 
-    #Lecture puis transformation des donnees "tranche d'ages" et stockage dans un fichier csv
+    # Transformation + Suppression des valeurs nulles et stockage du fichier mesures
+    df_urgence_mesures = df_urgence[["id", "dep", "date_de_passage", "sursaud_cl_age_corona", "nbre_pass_tot", "nbre_pass_corona", "nbre_hospit_corona"]].copy()   
+    df_urgence_mesures["date_de_passage"] = pd.to_datetime(df_urgence_mesures["date_de_passage"], errors="coerce", format='%Y-%m-%d')
+    df_urgence_mesures = df_urgence_mesures.rename({'sursaud_cl_age_corona': 'code_age'}, axis=1)
+    df_urgence_mesures = df_urgence_mesures.dropna()
+    df_urgence_mesures.to_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/donnees-urgence-mesures.csv"), index=False)
+    print(df_urgence_mesures)
 
+    
+    # Transformation + Suppression des valeurs nulles et stockage du fichier hospit 
+    df_urgence_h= df_urgence.loc[df_urgence["sursaud_cl_age_corona"] == "0"].copy()
+    df_urgence_hospit = df_urgence_h[["id", "nbre_pass_tot_h", "nbre_pass_tot_f", "nbre_pass_corona_h", "nbre_pass_corona_f", "nbre_hospit_corona_h", "nbre_hospit_corona_f"]].copy()
+    df_urgence_hospit = df_urgence_hospit.rename({'id': 'urgence_mesures_id'}, axis=1)
+    df_urgence_hospit = df_urgence_hospit.dropna()
+    df_urgence_hospit.to_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/donnees-urgence-hospit.csv"), index=False)  
+    print(df_urgence_hospit)           
+
+
+
+    #Lecture puis transformation des donnees "tranche d'ages" et stockage dans un fichier csv
     df_tranche = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/raw/code-tranches-dage-donnees-urgences.csv"),
                         sep=";",
                         dtype="unicode")
@@ -54,7 +71,6 @@ def extract_transform_data():
     print(df_tranche)
 
     #Lecture puis transformation des donnees "departement" et stockage dans un fichier csv
-
     df_dep = pd.read_json(os.path.expandvars("${AIRFLOW_HOME}/data/raw/departements-region.json"))
     df_dep.rename(columns={'num_dep': 'id_dep', 'dep_name' : 'nom_dep' , 'region_name':'region'}, inplace=True)
     df_dep.to_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/departements-region.csv"), index=False)
@@ -80,12 +96,14 @@ def load_data():
     # Chargement des donnees depuis les fichiers
     df_tranche = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/code-tranches-dage-donnees-urgences.csv"))
     df_dep = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/departements-region.csv"))
-    df_urgence = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/donnees-urgences-SOS-medecins.csv"))
+    df_urgence_mesures = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/donnees-urgence-mesures.csv"))
+    df_urgence_hospit = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/donnees-urgence-hospit.csv"))
     
     # Insertion des donnees
     df_tranche.to_sql('tranche_age', con=engine, if_exists='append', index=False,  method='multi', chunksize=1000)
     df_dep.to_sql('departement', con=engine, if_exists='append', index=False, method='multi', chunksize=1000)
-    df_urgence.to_sql('urgence', con=engine, if_exists='append', index=False, method='multi', chunksize=1000)
+    df_urgence_mesures.to_sql('urgence_mesures', con=engine, if_exists='append', index=False, method='multi', chunksize=1000)
+    df_urgence_hospit.to_sql('urgence_hospit', con=engine, if_exists='append', index=False, method='multi', chunksize=1000)
 
 insert = load_data()
 
@@ -109,4 +127,4 @@ with DAG(
     )
 
 # Define the task dependencies
-create_tables >> extract >> [insert]
+extract >> create_tables >> [insert]
