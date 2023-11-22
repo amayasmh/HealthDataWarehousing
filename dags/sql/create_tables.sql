@@ -1,3 +1,14 @@
+-- Supprimer la table urgence si elle existe
+DROP TABLE IF EXISTS urgence;
+
+-- Supprimer la table tranche_age si elle existe
+DROP TABLE IF EXISTS tranche_age;
+
+-- Supprimer la table departement si elle existe
+DROP TABLE IF EXISTS departement;
+
+
+
 CREATE TABLE IF NOT EXISTS departement (
     id_dep VARCHAR(5) PRIMARY KEY,
     nom_dep VARCHAR(255),
