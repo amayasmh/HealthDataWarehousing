@@ -30,7 +30,7 @@ sql_f_createT_path = Path(os.environ['AIRFLOW_HOME'] + '/dags/sql/create_tables.
 @task(task_id="extract_and_transformation_data")
 def extract_transform_data():
 
-    #Lecture puis transformation des donnees "urgence" et stockage dans un fichier csv
+    # Lecture puis transformation des donnees "urgence" et stockage dans un fichier csv
 
     df_urgence = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/raw/donnees-urgences-SOS-medecins.csv"),
                         sep=";",
@@ -60,7 +60,7 @@ def extract_transform_data():
 
 
 
-    #Lecture puis transformation des donnees "tranche d'ages" et stockage dans un fichier csv
+    # Lecture puis transformation des donnees "tranche d'ages" et stockage dans un fichier csv
     df_tranche = pd.read_csv(os.path.expandvars("${AIRFLOW_HOME}/data/raw/code-tranches-dage-donnees-urgences.csv"),
                         sep=";",
                         dtype="unicode")
@@ -70,7 +70,7 @@ def extract_transform_data():
     df_tranche.to_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/code-tranches-dage-donnees-urgences.csv"), index=False)
     print(df_tranche)
 
-    #Lecture puis transformation des donnees "departement" et stockage dans un fichier csv
+    # Lecture puis transformation des donnees "departement" et stockage dans un fichier csv
     df_dep = pd.read_json(os.path.expandvars("${AIRFLOW_HOME}/data/raw/departements-region.json"))
     df_dep.rename(columns={'num_dep': 'id_dep', 'dep_name' : 'nom_dep' , 'region_name':'region'}, inplace=True)
     df_dep.to_csv(os.path.expandvars("${AIRFLOW_HOME}/data/processed/departements-region.csv"), index=False)
