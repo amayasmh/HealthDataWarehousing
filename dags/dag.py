@@ -7,6 +7,9 @@ from sqlalchemy import create_engine
 import pandas as pd 
 import os
 from pathlib import Path
+import smtplib
+import json
+from email.message import EmailMessage
 
 
 
@@ -21,6 +24,39 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 # [END default_args]
+
+
+@task(task_id="envoi_mail")
+def send_mail(subject, content):
+    # Configuration de l'envoi de mail
+    gmail_cfg ={
+        "server" : "smtp.gmail.com",
+        "port" : "465",
+        "email" : "",  # A renseigner avant de lancer
+        "pwd" : ""  # A renseigner avant de lancer
+    }
+
+    msg = EmailMessage()
+    msg["to"] = gmail_cfg["email"]
+    msg["from"] = gmail_cfg["email"]
+    msg["Subject"] = subject
+    msg.set_content(content)
+
+    with smtplib.SMTP_SSL(gmail_cfg["server"], int(gmail_cfg["port"])) as smtp:
+        smtp.login(gmail_cfg["email"], gmail_cfg["pwd"])
+        smtp.send_message(msg)
+
+
+def on_failure_callback(context):
+    global create_tables_status
+    create_tables_status = False
+
+    # Personnalisez le contenu du courriel ici
+    subject = f"Airflow DAG {context['dag'].dag_id} Failed"
+    content = "The DAG failed. Please check the logs for more information."
+    send_mail(subject, content)
+    
+send_succes_mail = send_mail("Airflow DAG HealthDataWarehousing Succeeded", "Le DAG a été exécuté avec succès.")
 
 # Les chemins vers les fichiers sql pour creer les tables 
 sql_f_createT_path = Path(os.environ['AIRFLOW_HOME'] + '/dags/sql/create_tables.sql')
@@ -116,6 +152,7 @@ with DAG(
     start_date=datetime(2021, 1, 1),
     catchup=False,
     tags=['healthcare', 'data-warehousing'],
+    on_failure_callback=on_failure_callback,
 ) as dag:
 
     # Creation des tables en executant le fichier sql
@@ -127,4 +164,4 @@ with DAG(
     )
 
 # Define the task dependencies
-extract >> create_tables >> [insert]
+extract >> create_tables >> [insert] >> send_succes_mail

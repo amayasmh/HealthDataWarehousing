@@ -50,7 +50,10 @@ Le code source de ce projet est disponible sur GitHub. Vous pouvez accéder au d
 ## 6. Insertion de l'ensemble des données
    - Les données transformées ont été insérées dans les tables de l'entrepôt.
 
-## 7. Ajout d'un notebook pour la visualisation
+## 7. Envoi de mail en cas de succes ou d'érreur
+   - Envoyer un mail pour notifier l'échec ou la réussite de l'éxecution du dag.
+
+## 8. Ajout d'un notebook pour la visualisation
    - Un notebook a été ajouté dans le dossier `visualisation` pour permettre la visualisation des résultats une fois que le DAG a terminé son exécution.
 
 
@@ -89,35 +92,38 @@ Suivez ces instructions pour lancer le projet :
      ```bash
      set airflow_uid=1000
      ```
-
 4. **Vérifier la disponibilité des ports :**
    - Assurez-vous que le port 5435 est disponible. Libérez-le si nécessaire.
    - Assurez-vous également que le port 8081 est disponible.
-   
-5. **Arrêter les conteneurs déjà lancés :**
+
+5. **Création d'un mot de passe d'application Gmail pour recevoir le mail (très important pour faire fonctionner le DAG) :**
+   - Pour ce faire, rendez-vous sur le compte Gmail, puis dans "Gérer mon compte Google", ensuite dans "Sécurité", et dans la barre de recherche, tapez "Application". Créez ensuite un mot de passe d'application.
+   - Renseignez ce mot de passe et l'adresse mail dans la fonction `send_mail` du fichier `dag.py` (Ligne 35 et 36).  
+
+6. **Arrêter les conteneurs déjà lancés :**
    - Fermez les conteneurs qui pourraient utiliser les mêmes ports de connexion.
    - Exécutez la commande suivante pour arrêter les conteneurs Docker et supprimer les volumes :
      ```bash
      docker-compose down --volumes
      ```
 
-6. **Lancer les conteneurs Docker :**
+7. **Lancer les conteneurs Docker :**
    - Exécutez la commande suivante pour démarrer les conteneurs Docker :
      ```bash
      docker-compose up
      ```
 
-7. **Accéder à l'interface Airflow :**
+8. **Accéder à l'interface Airflow :**
    - Une fois le conteneur lancé, accédez à [http://localhost:8081](http://localhost:8081) pour accéder à l'interface Airflow.
    - Connectez-vous en utilisant le nom d'utilisateur (airflow) et le mot de passe (airflow).
 
-8. **Créer une connexion dans Airflow :**
+9. **Créer une connexion dans Airflow :**
    - Suivez les instructions fournies dans l'image 2 du fichier `support.pdf` pour créer une connexion dans Airflow.
 
-9. **Activer et lancer le DAG HealthDataWarehousing :**
+10. **Activer et lancer le DAG HealthDataWarehousing :**
    - Activez le DAG `HealthDataWarehousing` dans l'interface Airflow.
    - Lancez le DAG et assurez-vous que les 3 tâches sont complètement exécutées (vertes).
 
-10. **Ouvrir le notebook de visualisation :**
+11. **Ouvrir le notebook de visualisation :**
     - Ouvrez le notebook de visualisation et exécutez les cellules déjà remplies pour illustrer quelques résultats.
 
