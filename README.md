@@ -1,6 +1,17 @@
 # HealthDataWarehousing
 "HealthDataWarehousing" est un projet visant à établir un entrepôt de données. En utilisant des fichiers sources spécifiques liés aux passages aux urgences pour suspicion de COVID-19, ce projet a pour objectif de répondre à des questions liées à la pandémie.
 
+
+# Développeurs du Projet
+
+- **Amayas MAHMOUDI**
+- **Anis GHEBRIOUA**
+
+## Professeur Encadrant
+
+- **Rahma GARGOURI**
+
+
 # Dépôt Git
 
 Le code source de ce projet est disponible sur GitHub. Vous pouvez accéder au dépôt en suivant le lien ci-dessous :
