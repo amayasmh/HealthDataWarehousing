@@ -1,6 +1,11 @@
 # HealthDataWarehousing
 "HealthDataWarehousing" est un projet visant à établir un entrepôt de données. En utilisant des fichiers sources spécifiques liés aux passages aux urgences pour suspicion de COVID-19, ce projet a pour objectif de répondre à des questions liées à la pandémie.
 
+# Dépôt Git
+
+Le code source de ce projet est disponible sur GitHub. Vous pouvez accéder au dépôt en suivant le lien ci-dessous :
+[https://github.com/amayasmh/HealthDataWarehousing](https://github.com/amayasmh/HealthDataWarehousing)
+
 
 # Tâches Réalisées
 
@@ -53,15 +58,17 @@ Avant de commencer à utiliser ce projet, assurez-vous de disposer des élément
    - [Installer DBeaver](https://dbeaver.io/download/) pour une gestion facile de la base de données.
 
 
-
 # Instructions d'Utilisation
 
 Suivez ces instructions pour lancer le projet :
 
-1. **Lancer DBeaver :**
+1. **Créer un dossier "processed" à l'intérieur du dossier data :**
+   - Assurez-vous de créer un dossier nommé "processed" à l'intérieur du dossier `data`.
+
+2. **Lancer DBeaver :**
    - Démarrez DBeaver et créez une nouvelle connexion en suivant les instructions fournies dans l'image 1 du fichier `support.pdf`.
 
-2. **Ajouter une variable d'environnement :**
+3. **Ajouter une variable d'environnement :**
    - Sur Linux :
      ```bash
      export airflow_uid=1000
@@ -72,34 +79,34 @@ Suivez ces instructions pour lancer le projet :
      set airflow_uid=1000
      ```
 
-3. **Vérifier la disponibilité des ports :**
+4. **Vérifier la disponibilité des ports :**
    - Assurez-vous que le port 5435 est disponible. Libérez-le si nécessaire.
    - Assurez-vous également que le port 8081 est disponible.
    
-4. **Arrêter les conteneurs déjà lancés :**
+5. **Arrêter les conteneurs déjà lancés :**
    - Fermez les conteneurs qui pourraient utiliser les mêmes ports de connexion.
    - Exécutez la commande suivante pour arrêter les conteneurs Docker et supprimer les volumes :
      ```bash
      docker-compose down --volumes
      ```
 
-5. **Lancer les conteneurs Docker :**
+6. **Lancer les conteneurs Docker :**
    - Exécutez la commande suivante pour démarrer les conteneurs Docker :
      ```bash
      docker-compose up
      ```
 
-6. **Accéder à l'interface Airflow :**
+7. **Accéder à l'interface Airflow :**
    - Une fois le conteneur lancé, accédez à [http://localhost:8081](http://localhost:8081) pour accéder à l'interface Airflow.
    - Connectez-vous en utilisant le nom d'utilisateur (airflow) et le mot de passe (airflow).
 
-7. **Créer une connexion dans Airflow :**
+8. **Créer une connexion dans Airflow :**
    - Suivez les instructions fournies dans l'image 2 du fichier `support.pdf` pour créer une connexion dans Airflow.
 
-8. **Activer et lancer le DAG HealthDataWarehousing :**
+9. **Activer et lancer le DAG HealthDataWarehousing :**
    - Activez le DAG `HealthDataWarehousing` dans l'interface Airflow.
    - Lancez le DAG et assurez-vous que les 3 tâches sont complètement exécutées (vertes).
 
-9. **Ouvrir le notebook de visualisation :**
-   - Ouvrez le notebook de visualisation et exécutez les cellules déjà remplies pour illustrer quelques résultats.
+10. **Ouvrir le notebook de visualisation :**
+    - Ouvrez le notebook de visualisation et exécutez les cellules déjà remplies pour illustrer quelques résultats.
 
